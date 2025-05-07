@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Proxmox VM Creator</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f6f8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            width: 100%;
+        }
+
+        h2 {
+            text-align: center;
+            color: #333333;
+        }
+
+        label {
+            display: block;
+            margin-top: 15px;
+            font-weight: 600;
+        }
+
+        input[type="text"],
+        select {
+            width: 100%;
+            padding: 8px 12px;
+            margin-top: 5px;
+            border: 1px solid #cccccc;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        input[type="radio"],
+        input[type="checkbox"] {
+            margin-right: 8px;
+        }
+
+        .radio-group {
+            margin-top: 10px;
+        }
+
+        .form-section {
+            margin-top: 10px;
+        }
+
+        .messages {
+            margin-bottom: 20px;
+            padding: 10px 15px;
+            border-radius: 6px;
+        }
+
+        .success {
+            background-color: #e0f7e9;
+            color: #2e7d32;
+            border: 1px solid #a5d6a7;
+        }
+
+        .error {
+            background-color: #fdecea;
+            color: #c62828;
+            border: 1px solid #e57373;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #1976d2;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            border: none;
+            border-radius: 6px;
+            margin-top: 20px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #1565c0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Create or Clone a VM</h2>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="messages {{ category }}">
+                        <strong>{{ category|capitalize }}:</strong> {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST">
+            <div class="radio-group">
+                <label>Action:</label>
+                <input type="radio" name="action" value="create" checked> Create from ISO
+                <input type="radio" name="action" value="clone"> Clone from Template
+            </div>
+
+            <div class="form-section">
+                <label>VM ID (auto-assigned):</label>
+                <input type="text" name="vmid" value="{{ nextid }}" readonly>
+            </div>
+
+            <div class="form-section">
+                <label>Name:</label>
+                <input type="text" name="name" required>
+            </div>
+
+            <div class="form-section">
+                <label>CPU:</label>
+                <select name="cpu">
+                    {% for c in cpus %}
+                        <option value="{{ c }}">{{ c }}</option>
+                    {% endfor %}
+                    <option value="">Custom</option>
+                </select>
+            </div>
+
+            <div class="form-section">
+                <label>RAM (GB):</label>
+                <select name="ram">
+                    {% for r in rams %}
+                        <option value="{{ r }}">{{ r }}</option>
+                    {% endfor %}
+                    <option value="">Custom</option>
+                </select>
+            </div>
+
+            <div class="form-section">
+                <label>Storage:</label>
+                <select name="storage">
+                    {% for s in storages %}
+                        <option value="{{ s }}">{{ s }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-section">
+                <label>Network Bridge:</label>
+                <input type="text" name="bridge" value="{{ bridge }}" readonly>
+            </div>
+
+            <div id="isoSection" class="form-section">
+                <label>ISO Image:</label>
+                <select name="iso">
+                    {% for iso in iso_files %}
+                        <option value="{{ iso }}">{{ iso }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div id="templateSection" class="form-section" style="display: none;">
+                <label>Template:</label>
+                <select name="template">
+                    {% for tpl in templates %}
+                        <option value="{{ tpl.vmid }}">{{ tpl.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-section">
+                <label>
+                    <input type="checkbox" name="power_on">
+                    Power on VM after creation
+                </label>
+            </div>
+
+            <button type="submit">Submit</button>
+        </form>
+    </div>
+
+    <script>
+    // Toggle form sections
+    document.querySelectorAll('input[name="action"]').forEach((elem) => {
+        elem.addEventListener("change", function(event) {
+            const iso = document.getElementById("isoSection");
+            const tpl = document.getElementById("templateSection");
+
+            if (event.target.value === "create") {
+                iso.style.display = "block";
+                tpl.style.display = "none";
+            } else {
+                iso.style.display = "none";
+                tpl.style.display = "block";
+            }
+        });
+    });
+    </script>
+</body>
+</html>
+
